@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1075183456318",
+    "project_id": "frsystem-5f13e",
+    "storage_bucket": "frsystem-5f13e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1075183456318:android:6ca871c02c86b0c492016f",
+        "android_client_info": {
+          "package_name": "com.example.landingpage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCH3ww0BYf_ajLBIen1yhzig3owh76cHXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

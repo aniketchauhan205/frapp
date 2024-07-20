@@ -2,6 +2,7 @@
 
 package com.example.landingpage
 
+//import androidx.compose.foundation.layout.ColumnScopeInstance.align
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -19,50 +20,61 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.core.content.ContextCompat
-import com.example.landingpage.ui.theme.LandingPageTheme
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-//import androidx.compose.foundation.layout.ColumnScopeInstance.align
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cameraswitch
+import androidx.compose.material.icons.filled.Photo
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
-import com.example.landingpage.camerafunc as camerafunc
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.filled.Photo
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.runtime.rememberCoroutineScope
-import com.example.landingpage.com.example.landingpage.MainViewModel
-import com.example.landingpage.com.example.landingpage.PhotoBottomSheetContent
-import kotlinx.coroutines.launch
-import android.graphics.BitmapFactory
-import androidx.compose.runtime.collectAsState
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.io.output.ByteArrayOutputStream
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberAsyncImagePainter
+import com.example.landingpage.com.example.landingpage.PhotoBottomSheetContent
+import com.example.landingpage.com.example.landingpage.RegisterUserScreen
+import com.example.landingpage.ui.theme.LandingPageTheme
+import kotlinx.coroutines.launch
 
 
 //import kotlin.coroutines.jvm.internal.CompletedContinuation.context
@@ -83,8 +95,11 @@ class MainActivity : ComponentActivity() {
             //RegistrationScreen(onBack = { /* Handle back action here if needed */ })
             // LoginScreen()
             LandingPageTheme {
-            //     MainScreen()
-                    RegistrationScreen()
+                //LoginScreen()
+                     MainScreen()
+                    //RegistrationScreen()
+                    //RegistrationScreen()
+
             }
         }
     }
@@ -108,20 +123,64 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen() {
-    var showRegistration by remember { mutableStateOf(false) }
+    val navController = rememberNavController()
+    var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    //if (showRegistration) {
-      //RegistrationScreen(onBack = { showRegistration = false })
-    //} else {
-        LoginScreen(onRegister = { showRegistration = true })
-    //}
+    NavHost(navController = navController, startDestination = "pin_entry") {
+        composable("pin_entry") {
+            PinEntryScreen { isValid ->
+                if (isValid) {
+                    navController.navigate("registration")
+                }
+            }
+        }
+        composable("registration"){
+            RegistrationScreen(
+                onPhotoTaken = { bitmap ->
+                    capturedBitmap = bitmap
+                    navController.navigate("register_user")
+                },
+                navController = navController
+            )
+        }
+        composable("register_user") {
+            capturedBitmap?.let {bitmap ->
+                RegisterUserScreen(
+                    bitmap = bitmap,
+                    onSave = { name, id ->
+                        // Here you would save the information to your database
+                        // For now, we'll just print it and go back to registration
+                        println("Saved: Name=$name, ID=$id")
+                        navController.navigate("registration")
+                    },
+                    onBack = {
+                        navController.navigate("registration")
+                    }
+                )
+            }
+
+        }
+        composable("registered_employees") {
+            val viewModel: MainViewModel = viewModel()
+            RegisteredEmployeeScreen(viewModel = viewModel)
+        }
+
+    }
 }
 
+
 @Composable
-fun LoginScreen(onRegister: () -> Unit) {
+fun LoginScreenWithRegistrationOption(//onRegister: () -> Unit
+                                        navController: NavController) {
+
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        content = { padding ->
+        modifier = Modifier.fillMaxSize()
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -129,24 +188,45 @@ fun LoginScreen(onRegister: () -> Unit) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Login Screen")
+                Text(
+                    text = "Login Here",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                Button(
+                    onClick = {navController.navigate("LoginScreen") },
+                    modifier = Modifier.padding(bottom = 16.dp)
+                ) {
+                    Text("Login")
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "New to app?",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Text(
+                    text = "Register here",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
                 // Add your login form here
-                Button(onClick = onRegister) {
+                Button(onClick = {navController.navigate("registration") })
+                {
                     Text("Go to Registration")
                 }
             }
         }
-    )
-}
-
-@Composable
-fun RegistrationScreen() {
-    var showCamera by remember { mutableStateOf(false) }
-
-    if (showCamera) {
-        camerafunc(onBack = { showCamera = false })
-    } else {
-        RegistrationContent(onOpenCamera = { showCamera = true })
     }
 }
 
@@ -170,7 +250,7 @@ fun takePhoto(context: Context,
                 controller: LifecycleCameraController,
               onPhotoTaken: (Bitmap) -> Unit
 ) {
-    val dbHelper = DatabaseHelper(context)
+    //val dbHelper = DatabaseHelper(context)
     controller.takePicture(
         ContextCompat.getMainExecutor(context),
         object : ImageCapture.OnImageCapturedCallback() {
@@ -189,22 +269,20 @@ fun takePhoto(context: Context,
                     matrix,
                     true
                 )
-                val byteArray = bitmapToByteArray(rotatedBitmap)
-                dbHelper.insertImage(rotatedBitmap)
                 onPhotoTaken(rotatedBitmap)
             }
 
-//            override fun onError(exception: ImageCaptureException) {
-//                super.onError(exception)
-//                Log.e("Camera", "Couldn't take photo: ", exception)
-//            }
+            override fun onError(exception: ImageCaptureException) {
+                super.onError(exception)
+                Log.e("Camera", "Couldn't take photo: ", exception)
+            }
         }
     )
 }
 
 @Composable
 @kotlin.OptIn(ExperimentalMaterial3Api::class)
-fun camerafunc(onBack: () -> Unit) {
+fun camerafunc(onBack: () -> Unit, onPhotoTaken: (Bitmap) -> Unit) {
     val scaffoldState = rememberBottomSheetScaffoldState()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -222,11 +300,8 @@ fun camerafunc(onBack: () -> Unit) {
     }
 
     val viewModel = viewModel<MainViewModel>()
+    val photoPaths by viewModel.photoPaths.collectAsState()
     val bitmaps by viewModel.bitmaps.collectAsState()
-
-    // Retrieve images from database
-//    val dbHelper = DatabaseHelper(context)
-//    val images = dbHelper.getAllImages()
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -289,7 +364,7 @@ fun camerafunc(onBack: () -> Unit) {
                         takePhoto(
                             context = context,
                             controller = controller,
-                            onPhotoTaken = viewModel::onTakePhoto
+                            onPhotoTaken = onPhotoTaken
                         )
                     }
                 ) {
@@ -304,8 +379,111 @@ fun camerafunc(onBack: () -> Unit) {
     }
 }
 
-fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
-    val stream = ByteArrayOutputStream()
-    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-    return stream.toByteArray()
+@Composable
+    fun RegistrationScreen(onPhotoTaken: (Bitmap) -> Unit, navController: NavController) {
+        var showCamera by remember { mutableStateOf(false) }
+
+        if (showCamera) {
+            camerafunc(onBack = { showCamera = false },
+                onPhotoTaken = {bitmap ->
+                    showCamera = false
+                    onPhotoTaken(bitmap)
+                })
+        } else {
+            //RegistrationContent(onOpenCamera = { showCamera = true })
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                RegistrationContent(onOpenCamera = { showCamera = true })
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Button(onClick = { navController.navigate("registered_employees") }) {
+                    Text("View Registered Employees")
+                }
+            }
+        }
+}
+
+@Composable
+fun PinEntryScreen(onPinValidated: (Boolean) -> Unit) {
+    var pin by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Enter your PIN", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(16.dp))
+        TextField(
+            value = pin,
+            onValueChange = { pin = it },
+            label = { Text("PIN") },
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.NumberPassword),
+            visualTransformation = PasswordVisualTransformation()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = {
+            val savedPin = "1234"  // Replace this with your actual saved PIN retrieval logic
+            if (savedPin == pin) {
+                onPinValidated(true)
+            } else {
+                error = true
+            }
+        }) {
+            Text("Submit")
+        }
+        if (error) {
+            Text(text = "Invalid PIN",
+//                color = Color.Red,
+                style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@Composable
+fun RegisteredEmployeeScreen(viewModel: MainViewModel){
+    val employees by viewModel.employees.collectAsState(initial = emptyList())
+
+    LazyColumn{
+        items(employees){
+            employee->
+            EmployeeItem(employee)
+
+        }
+    }
+}
+
+@Composable
+fun EmployeeItem(employee: Employee) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Image(
+            painter = rememberAsyncImagePainter(model = employee.photoPath),
+            contentDescription = "Employee photo",
+            modifier = Modifier
+                .height(64.dp) //it should be size
+                .clip(CircleShape)
+        )
+        Column(
+            modifier = Modifier
+                .padding(start = 16.dp)
+                .weight(1f)
+        ) {
+            Text(text = employee.name, style = MaterialTheme.typography.bodyLarge)
+            Text(text = "ID: ${employee.employeeId}", style = MaterialTheme.typography.bodyMedium)
+        }
+    }
 }

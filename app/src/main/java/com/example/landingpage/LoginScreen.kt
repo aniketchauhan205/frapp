@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.TextField
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,10 +31,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
-
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.navigation.NavController
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen( navController: NavController) {
     val backgroundImage: Painter = painterResource(id = R.drawable.bg)
 
     Box(
@@ -58,11 +71,34 @@ fun LoginScreen() {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            TextField(value = "", onValueChange = {}, label = { Text(text = "E-mail") })
+            //TextField(value = "", onValueChange = {}, label = { Text(text = "E-mail") })
 
+            var email by remember { mutableStateOf("") }
+
+            TextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text(text = "E-mail") }
+            )
             Spacer(modifier = Modifier.height(20.dp))
 
-            TextField(value = "", onValueChange = {}, label = { Text(text = "Password") })
+            var password by remember { mutableStateOf("") }
+            var passwordVisible by remember { mutableStateOf(false) }
+            TextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(text = "Password") },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    IconButton(onClick = {passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                        )
+                    }
+                }
+            )
 
             Spacer(modifier = Modifier.height(25.dp))
 

@@ -1,52 +1,61 @@
 // MainViewModel.kt
-package com.example.landingpage.com.example.landingpage
+package com.example.landingpage
 
 import android.app.Application
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import androidx.compose.foundation.Image
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.room.Room
 import com.example.landingpage.com.example.landingpage.AppDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import java.io.ByteArrayOutputStream
+
+//class MainViewModel: ViewModel() {
+//
+//    private val _bitmaps = MutableStateFlow<List<Bitmap>>(emptyList())
+//    val bitmaps = _bitmaps.asStateFlow()
+//
+//    fun onTakePhoto(bitmap: Bitmap) {
+//        _bitmaps.value += bitmap
+//    }
+//
+//
+//}
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+    private val database = AppDatabase.getDatabase(application)
+    private val employeeDao = database.employeeDao()
 
-    private val database = Room.databaseBuilder(
-        application,
-        AppDatabase::class.java, "image_database"
-    ).build()
+    private val _employees = MutableStateFlow<List<Employee>>(emptyList())
+    val employees: StateFlow<List<Employee>> = _employees.asStateFlow()
+
+    private val _photoPaths= MutableStateFlow<List<String>>(emptyList())
+    val photoPaths = _photoPaths.asStateFlow()
 
     private val _bitmaps = MutableStateFlow<List<Bitmap>>(emptyList())
-    val bitmaps: StateFlow<List<Bitmap>> = _bitmaps.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            database.imageDao().getAllImages().collect { imageEntities ->
-                _bitmaps.value = imageEntities.map { byteArrayToBitmap(it.image) }
-            }
-        }
+    val bitmaps = _bitmaps.asStateFlow()
+    fun onTakePhoto(bitmap : Bitmap) {
+        _bitmaps.value += bitmap
     }
 
-    fun onTakePhoto(bitmap: Bitmap) {
-        viewModelScope.launch {
-            val byteArray = bitmapToByteArray(bitmap)
-            database.imageDao().insertImage(ImageEntity(image = byteArray))
-        }
-    }
-
-    private fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
-        val stream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-        return stream.toByteArray()
-    }
-
-    private fun byteArrayToBitmap(byteArray: ByteArray): Bitmap {
-        return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
-    }
+//    fun saveEmployee(name: String, employeeId: String, photoPath: String) {
+//        viewModelScope.launch {
+//            val employee = Employee(0, name, employeeId, photoPath)
+//            employeeDao.insertEmployee(employee)
+//            loadEmployees()
+//        }
+//    }
+//
+//    fun loadEmployees() {
+//        viewModelScope.launch {
+//            _employees.value = employeeDao.getAllEmployees()
+//        }
+//    }
+//
+//    fun deleteEmployee(employee: Employee) {
+//        viewModelScope.launch {
+//            employeeDao.deleteEmployee(employee)
+//            loadEmployees()
+//        }
+//    }
+//this all is the part of database
 }
