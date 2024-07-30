@@ -3,11 +3,16 @@ package com.example.landingpage
 
 import android.app.Application
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.landingpage.com.example.landingpage.AppDatabase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import java.io.File
 
 //class MainViewModel: ViewModel() {
 //
@@ -37,25 +42,47 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _bitmaps.value += bitmap
     }
 
-//    fun saveEmployee(name: String, employeeId: String, photoPath: String) {
-//        viewModelScope.launch {
-//            val employee = Employee(0, name, employeeId, photoPath)
-//            employeeDao.insertEmployee(employee)
-//            loadEmployees()
-//        }
-//    }
-//
-//    fun loadEmployees() {
-//        viewModelScope.launch {
-//            _employees.value = employeeDao.getAllEmployees()
-//        }
-//    }
-//
-//    fun deleteEmployee(employee: Employee) {
-//        viewModelScope.launch {
-//            employeeDao.deleteEmployee(employee)
-//            loadEmployees()
-//        }
-//    }
-//this all is the part of database
+    init {
+        loadEmployees()
+    }
+
+    fun saveEmployee(name: String, employeeId: String, photoPath: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val employee = Employee(0, name, employeeId, photoPath)
+            val file = File(getApplication<Application>().filesDir, "employees.json")
+            file.appendText("${employee.name},${employee.employeeId},${employee.photoPath}\n")
+            loadEmployees()
+        }
+    }
+
+    fun loadEmployees() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val file = File(getApplication<Application>().filesDir, "employees.json")
+            if (file.exists()) {
+                val employeesList = file.readLines().map {
+                    val parts = it.split(",")
+                    Employee(0, parts[0], parts[1], parts[2])
+                }
+                _employees.value = employeesList
+            }
+
+        }
+    }
+
+    fun deleteEmployee(employee: Employee) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val file = File(getApplication<Application>().filesDir, "employees.txt")
+            if (file.exists()) {
+                val updatedEmployees = file.readLines().filterNot {
+                    val parts = it.split(",")
+                    parts[1] == employee.employeeId
+                }
+                file.writeText(updatedEmployees.joinToString("\n"))
+                loadEmployees()
+                Log.d("MainViewModel", "Employee deleted: $employee")
+                Log.d("MainViewModel", "Updated employees: $updatedEmployees")
+            }
+        }
+    }
+
 }

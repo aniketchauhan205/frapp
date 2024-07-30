@@ -96,4 +96,7 @@ dependencies {
     implementation ("androidx.room:room-runtime:$room_version")
     ksp("androidx.room:room-compiler:$room_version")
     implementation ("io.coil-kt:coil-compose:2.0.0")
+    // https://mvnrepository.com/artifact/org.opencv/opencv
+    implementation("org.opencv:opencv:4.10.0")
+    implementation("org.apache.commons:commons-math3:3.6.1")
 }

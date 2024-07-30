@@ -36,8 +36,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -125,6 +127,7 @@ class MainActivity : ComponentActivity() {
 fun MainScreen() {
     val navController = rememberNavController()
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    val viewModel: MainViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = "pin_entry") {
         composable("pin_entry") {
@@ -147,11 +150,14 @@ fun MainScreen() {
             capturedBitmap?.let {bitmap ->
                 RegisterUserScreen(
                     bitmap = bitmap,
-                    onSave = { name, id ->
-                        // Here you would save the information to your database
-                        // For now, we'll just print it and go back to registration
-                        println("Saved: Name=$name, ID=$id")
+                    onSave = { name, id, photoPath->
+                        // Save the photo
+//                        val viewModel: MainViewModel = viewModel()
+                        viewModel.saveEmployee(name, id, photoPath)
+
+                        // Navigate back to registration
                         navController.navigate("registration")
+
                     },
                     onBack = {
                         navController.navigate("registration")
@@ -167,6 +173,7 @@ fun MainScreen() {
 
     }
 }
+
 
 
 @Composable
@@ -231,7 +238,7 @@ fun LoginScreenWithRegistrationOption(//onRegister: () -> Unit
 }
 
 @Composable
-fun RegistrationContent(onOpenCamera: () -> Unit) {
+fun RegistrationContent(onOpenCamera: () -> Unit, navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -242,6 +249,11 @@ fun RegistrationContent(onOpenCamera: () -> Unit) {
         Text("Register Here", modifier = Modifier.padding(bottom = 20.dp))
         Button(onClick = onOpenCamera) {
             Text("Open Camera")
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+        Text("see registered employees", modifier = Modifier.padding(bottom = 20.dp))
+        Button(onClick = { navController.navigate("registered_employees") }) {
+            Text("go to employee list")
         }
     }
 }
@@ -398,7 +410,7 @@ fun camerafunc(onBack: () -> Unit, onPhotoTaken: (Bitmap) -> Unit) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                RegistrationContent(onOpenCamera = { showCamera = true })
+                RegistrationContent(onOpenCamera = { showCamera = true }, navController = navController)
 
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -452,18 +464,46 @@ fun PinEntryScreen(onPinValidated: (Boolean) -> Unit) {
 @Composable
 fun RegisteredEmployeeScreen(viewModel: MainViewModel){
     val employees by viewModel.employees.collectAsState(initial = emptyList())
+    var employeeToDelete by remember { mutableStateOf<Employee?>(null) }
+    val showDialog = remember { mutableStateOf(false) }
 
+
+    if (showDialog.value) {
+        employeeToDelete?.let { employee ->
+            AlertDialog(
+                onDismissRequest = { showDialog.value = false },
+                title = { Text(text = "Delete Employee") },
+                text = { Text(text = "Are you sure you want to delete this employee?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.deleteEmployee(employee)
+                            showDialog.value = false
+                        }
+                    ) {
+                        Text("Confirm")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = { showDialog.value = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+    }
     LazyColumn{
         items(employees){
             employee->
-            EmployeeItem(employee)
+            EmployeeItem(employee, onDeleteClick = {employeeToDelete = employee
+                showDialog.value = true})
 
         }
     }
 }
 
 @Composable
-fun EmployeeItem(employee: Employee) {
+fun EmployeeItem(employee: Employee, onDeleteClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -484,6 +524,9 @@ fun EmployeeItem(employee: Employee) {
         ) {
             Text(text = employee.name, style = MaterialTheme.typography.bodyLarge)
             Text(text = "ID: ${employee.employeeId}", style = MaterialTheme.typography.bodyMedium)
+        }
+        IconButton(onClick = onDeleteClick) {
+            Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete Employee")
         }
     }
 }
